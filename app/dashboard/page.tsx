@@ -2,199 +2,204 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  LogOut,
-  Calendar,
-  User,
-  Home,
-  Settings,
-  Menu,
-} from "lucide-react";
 
 export default function Dashboard() {
   const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<(number | null)[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUsername = localStorage.getItem("username");
 
-    if (!token) router.push("/login");
-    if (storedUsername) setUsername(storedUsername);
+    // Redirect if not logged in
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
+    // Set username
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+
+    // Generate calendar
     generateCalendar(new Date());
-  }, []);
+  }, [router]);
 
+  // Generate calendar days
   const generateCalendar = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
     const days: (number | null)[] = [];
 
-    for (let i = 0; i < startingDayOfWeek; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
+    // Empty spaces before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add actual days
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
 
     setCalendarDays(days);
   };
 
+  // Previous month
   const handlePrevMonth = () => {
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() - 1
     );
+
     setCurrentDate(newDate);
     generateCalendar(newDate);
   };
 
+  // Next month
   const handleNextMonth = () => {
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth() + 1
     );
+
     setCurrentDate(newDate);
     generateCalendar(newDate);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    document.cookie = "token=; path=/; Max-Age=0; SameSite=Lax";
-    router.push("/login");
-  };
-
+  // Month names
   const monthNames = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  // Day names
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  // Today's date
   const today = new Date();
+
   const isCurrentMonth =
     today.getFullYear() === currentDate.getFullYear() &&
     today.getMonth() === currentDate.getMonth();
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="p-6">
 
-      {/* 🔥 Sidebar */}
-      <div
-        className={`bg-blue-600 text-white ${
-          sidebarOpen ? "w-64" : "w-20"
-        } transition-all duration-300 flex flex-col`}
-      >
-        <div className="p-4 font-bold text-lg border-b border-blue-500">
-          {sidebarOpen ? "My App" : "MA"}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div className="flex-1 p-4 space-y-3">
-          <button onClick={() => router.push("/dashboard")} className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded">
-            <Home /> {sidebarOpen && "Dashboard"}
-          </button>
+        {/* Calendar */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow">
 
-          <button onClick={() => router.push("/profile")} className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded">
-            <User /> {sidebarOpen && "Profile"}
-          </button>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4">
 
-          <button onClick={() => router.push("/settings")} className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded">
-            <Settings /> {sidebarOpen && "Settings"}
-          </button>
-        </div>
+            <h2 className="font-bold text-lg">
+              {monthNames[currentDate.getMonth()]}{" "}
+              {currentDate.getFullYear()}
+            </h2>
 
-        <div className="p-4 border-t border-blue-500">
-          <button onClick={handleLogout} className="flex items-center gap-3 w-full bg-red-500 hover:bg-red-600 p-2 rounded">
-            <LogOut /> {sidebarOpen && "Logout"}
-          </button>
-        </div>
-      </div>
+            <div className="flex gap-3">
 
-      {/* 🔥 Main Area */}
-      <div className="flex-1 flex flex-col">
+              <button
+                onClick={handlePrevMonth}
+                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                ←
+              </button>
 
-        {/* 🔥 Top Navbar */}
-        <div className="bg-white shadow px-6 py-3 flex justify-between items-center">
+              <button
+                onClick={handleNextMonth}
+                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                →
+              </button>
 
-          {/* Left */}
-          <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Menu />
-            </button>
-            <h1 className="text-xl font-bold">Dashboard</h1>
+            </div>
           </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-3">
-            <User />
-            <span className="font-medium">{username || "User"}</span>
-          </div>
-        </div>
+          {/* Days */}
+          <div className="grid grid-cols-7 gap-2">
 
-        {/* 🔥 Content */}
-        <div className="p-6">
+            {dayNames.map((day) => (
+              <div
+                key={day}
+                className="text-center font-bold"
+              >
+                {day}
+              </div>
+            ))}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Dates */}
+            {calendarDays.map((day, i) => {
 
-            {/* Calendar */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow">
-              <div className="flex justify-between mb-4">
-                <h2 className="font-bold text-lg">
-                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                </h2>
+              const isToday =
+                isCurrentMonth &&
+                day === today.getDate();
 
-                <div>
-                  <button onClick={handlePrevMonth}>←</button>
-                  <button onClick={handleNextMonth}>→</button>
+              return (
+                <div
+                  key={i}
+                  className={`h-10 flex items-center justify-center rounded
+                    ${
+                      day === null
+                        ? "bg-transparent"
+                        : isToday
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100"
+                    }
+                  `}
+                >
+                  {day}
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        </div>
 
-              <div className="grid grid-cols-7 gap-2">
-                {dayNames.map((day) => (
-                  <div key={day} className="text-center font-bold">
-                    {day}
-                  </div>
-                ))}
+        {/* Right Side Cards */}
+        <div className="space-y-4">
 
-                {calendarDays.map((day, i) => {
-                  const isToday = isCurrentMonth && day === today.getDate();
+          {/* Profile */}
+          <div className="bg-white p-4 rounded shadow">
+            <h3 className="font-bold mb-2">
+              Profile
+            </h3>
 
-                  return (
-                    <div
-                      key={i}
-                      className={`h-10 flex items-center justify-center rounded ${
-                        isToday ? "bg-blue-500 text-white" : "bg-gray-100"
-                      }`}
-                    >
-                      {day}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <p>{username || "User"}</p>
+          </div>
 
-            {/* Right Cards */}
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded shadow">
-                <h3 className="font-bold">Profile</h3>
-                <p>{username}</p>
-              </div>
+          {/* Stats */}
+          <div className="bg-blue-500 text-white p-4 rounded shadow">
+            <h3 className="font-bold mb-2">
+              Stats
+            </h3>
 
-              <div className="bg-blue-500 text-white p-4 rounded shadow">
-                <h3 className="font-bold">Stats</h3>
-                <p>Active</p>
-              </div>
-            </div>
-
+            <p>Active</p>
           </div>
 
         </div>
+
       </div>
     </div>
   );
