@@ -18,6 +18,5 @@ export default function Home() {
     }
   }, [router]);
 
-  // Return null while redirecting to prevent rendering
   return null;
 }

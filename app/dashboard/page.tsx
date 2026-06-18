@@ -118,7 +118,6 @@ export default function Dashboard() {
               {monthNames[currentDate.getMonth()]}{" "}
               {currentDate.getFullYear()}
             </h2>
-
             <div className="flex gap-3">
 
               <button
@@ -180,19 +179,10 @@ export default function Dashboard() {
         {/* Right Side Cards */}
         <div className="space-y-4">
 
-          {/* Profile */}
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="font-bold mb-2">
-              Profile
-            </h3>
-
-            <p>{username || "User"}</p>
-          </div>
-
           {/* Stats */}
           <div className="bg-blue-500 text-white p-4 rounded shadow">
             <h3 className="font-bold mb-2">
-              Stats
+              Status
             </h3>
 
             <p>Active</p>

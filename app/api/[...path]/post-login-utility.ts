@@ -53,7 +53,7 @@ export const postLoginUser = async (req: NextRequest) => {
         email: user.email,
       },
       JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "2m" }
     );
 
     return NextResponse.json(

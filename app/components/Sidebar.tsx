@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, User, Settings, LogOut } from "lucide-react";
+import { Home, User, Briefcase, Users, Settings, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type SidebarProps = {
@@ -32,7 +32,7 @@ export default function Sidebar({
 
       {/* Logo */}
       <div className="p-4 font-bold text-lg border-b border-blue-500">
-        {sidebarOpen ? "My App" : "MA"}
+        {sidebarOpen ? "HRMS" : "Employee"}
       </div>
 
       {/* Menu */}
@@ -53,7 +53,13 @@ export default function Sidebar({
           <User />
           {sidebarOpen && "Profile"}
         </button>
-
+        <button
+          onClick={() => router.push("/employees")}
+          className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"
+        >
+          <Briefcase />
+          {sidebarOpen && "Employees"}
+        </button>
         <button
           onClick={() => router.push("/settings")}
           className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"

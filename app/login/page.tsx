@@ -28,7 +28,8 @@ export default function Page() {
     // Save auth token for client + middleware routing
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("username", res.data.user?.name || "");
-    document.cookie = `token=${res.data.token}; path=/; Max-Age=${60 * 60 * 24}; SameSite=Lax`;
+    document.cookie = `token=${res.data.token}; path=/; Max-Age=${60 * 2}; SameSite=Lax`;
+    //document.cookie = `token=${res.data.token}; path=/; Max-Age=${60 * 60 * 2}; SameSite=Lax`;
 
     toast.success("Login Successful ✅");
 
