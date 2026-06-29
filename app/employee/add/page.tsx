@@ -5,7 +5,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon } from 'lucide-react';
 
 interface EmployeeFormData {
   fname: string;
@@ -36,6 +36,9 @@ interface EmployeeFormData {
 export default function AddEmployee() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<EmployeeFormData>({
     fname: '',
     mname: '',
@@ -70,6 +73,40 @@ export default function AddEmployee() {
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+      toast.error('Unsupported file format. Please upload JPG, JPEG, PNG, or WEBP.');
+      return;
+    }
+
+    // Validate size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size exceeds the 2 MB limit.');
+      return;
+    }
+
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -82,7 +119,22 @@ export default function AddEmployee() {
     setSubmitting(true);
 
     try {
-      const res = await axios.post('/api/addEmployee', formData);
+      const submitData = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          submitData.append(key, value.toString());
+        }
+      });
+
+      if (selectedFile) {
+        submitData.append('emp_photo', selectedFile);
+      }
+
+      const res = await axios.post('/api/addEmployee', submitData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       if (res.data.success) {
         toast.success('Employee created successfully!');
@@ -219,6 +271,84 @@ export default function AddEmployee() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
+                {/* Profile Photo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Photo
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
+                    {/* Preview Box */}
+                    <div className="w-[150px] h-[150px] relative rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center overflow-hidden shrink-0">
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center p-3">
+                          <ImageIcon className="mx-auto h-8 w-8 text-gray-400 mb-1" />
+                          <span className="block text-xs font-semibold text-gray-500">Profile Photo</span>
+                          <span className="block text-[10px] text-gray-400 mt-0.5">150 x 150</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions and details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {!selectedFile ? (
+                          <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg cursor-pointer font-medium text-sm transition">
+                            <Upload size={14} />
+                            Upload Image
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              onChange={handleFileChange}
+                              className="hidden"
+                            />
+                          </label>
+                        ) : (
+                          <>
+                            <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg cursor-pointer font-medium text-sm transition">
+                              <Upload size={14} />
+                              Change Image
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                onChange={handleFileChange}
+                                className="hidden"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={handleRemoveImage}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg font-medium text-sm transition"
+                            >
+                              <X size={14} />
+                              Remove Image
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="text-xs text-gray-500 space-y-1.5 border-t border-gray-100 pt-3">
+                        <div>
+                          <span className="font-semibold text-gray-600">Supported:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {['JPG', 'JPEG', 'PNG', 'WEBP'].map((ext) => (
+                              <span key={ext} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium uppercase">{ext}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-[11px]">
+                          <span className="font-semibold text-gray-600">Maximum Size:</span> 2 MB
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -295,19 +425,6 @@ export default function AddEmployee() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Senior Employee ID
-                  </label>
-                  <input
-                    type="text"
-                    name="senior_emp_id"
-                    value={formData.senior_emp_id || ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fixed Salary
                   </label>
                   <input
@@ -355,8 +472,8 @@ export default function AddEmployee() {
                     onChange={handleChange}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value={1}>Active</option>
-                    <option value={0}>Inactive</option>
+                    <option value={0}>Active</option>
+                    <option value={1}>Inactive</option>
                   </select>
                 </div>
               </div>

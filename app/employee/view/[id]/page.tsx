@@ -149,7 +149,7 @@ export default function EmployeeViewPage() {
               <div>
                 {employee.emp_photo ? (
                   <img
-                    src={employee.emp_photo}
+                    src={employee.emp_photo.startsWith('uploads/') ? `/${employee.emp_photo}` : `/uploads/employees/${employee.emp_photo}`}
                     alt={employee.fname}
                     className="w-36 h-36 rounded-full border-4 border-white object-cover shadow-lg"
                   />
