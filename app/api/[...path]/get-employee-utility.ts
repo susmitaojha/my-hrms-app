@@ -21,7 +21,6 @@ export const getEmployees = async (req: NextRequest) => {
         joining_date,
         emp_photo,
         gender,
-        managerid,
         team_lead_id,
         senior_emp_id,
         department,

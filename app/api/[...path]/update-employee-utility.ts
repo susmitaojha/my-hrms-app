@@ -50,6 +50,20 @@ export const updateEmployee = async (req: NextRequest) => {
       cl,
       salary_deduction,
       status,
+      salary_type,
+      basic_salary,
+      hra,
+      da,
+      conveyance,
+      medical,
+      special_allowance,
+      gross_salary,
+      pf_applicable,
+      esi_applicable,
+      professional_tax,
+      tds_applicable,
+      bank_account,
+      salary_structure_status,
       remove_photo,
     } = fields;
 
@@ -146,8 +160,6 @@ export const updateEmployee = async (req: NextRequest) => {
 
       empPhotoDbPath = `uploads/employees/${uniqueFilename}`;
     }
-    // Case 1: No changes made (empPhotoDbPath remains oldPhotoPath)
-
     // Update employee
     await connection.query(
       `UPDATE employees SET
@@ -205,6 +217,74 @@ export const updateEmployee = async (req: NextRequest) => {
         id,
       ]
     );
+
+    const [salaryStructureRows]: any = await connection.query(
+      `SELECT id FROM employee_salary_structures WHERE employee_id = ? LIMIT 1`,
+      [id]
+    );
+
+    const salaryStructurePayload = [
+      salary_type || null,
+      getNum(basic_salary),
+      getNum(hra),
+      getNum(da),
+      getNum(conveyance),
+      getNum(medical),
+      getNum(special_allowance),
+      getNum(gross_salary),
+      getInt(pf_applicable, 0),
+      getInt(esi_applicable, 0),
+      getNum(professional_tax),
+      getInt(tds_applicable, 0),
+      bank_account || null,
+      getInt(salary_structure_status, 1),
+    ];
+
+    if ((salaryStructureRows as any[]).length > 0) {
+      await connection.query(
+        `UPDATE employee_salary_structures SET
+          salary_type = ?,
+          basic_salary = ?,
+          hra = ?,
+          da = ?,
+          conveyance = ?,
+          medical = ?,
+          special_allowance = ?,
+          gross_salary = ?,
+          pf_applicable = ?,
+          esi_applicable = ?,
+          professional_tax = ?,
+          tds_applicable = ?,
+          bank_account = ?,
+          status = ?,
+          updated_at = NOW()
+        WHERE employee_id = ?`,
+        [...salaryStructurePayload, id]
+      );
+    } else {
+      await connection.query(
+        `INSERT INTO employee_salary_structures (
+          employee_id,
+          salary_type,
+          basic_salary,
+          hra,
+          da,
+          conveyance,
+          medical,
+          special_allowance,
+          gross_salary,
+          pf_applicable,
+          esi_applicable,
+          professional_tax,
+          tds_applicable,
+          bank_account,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [id, ...salaryStructurePayload]
+      );
+    }
 
     return NextResponse.json(
       {

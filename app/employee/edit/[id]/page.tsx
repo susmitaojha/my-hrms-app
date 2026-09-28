@@ -18,7 +18,6 @@ interface EmployeeFormData {
     dob: string;
     joining_date: string;
     gender: string;
-    managerid: number | null;
     team_lead_id: number | null;
     senior_emp_id: number | null;
     department: string;
@@ -34,6 +33,40 @@ interface EmployeeFormData {
     salary_deduction: number;
     status: number;
 }
+interface SalaryStructureFormData {
+    salary_type: string | null;
+
+    basic_salary: number | null;
+    hra: number | null;
+    da: number | null;
+    conveyance: number | null;
+    medical: number | null;
+    special_allowance: number | null;
+    gross_salary: number | null;
+
+    pf_applicable: number | null;
+    esi_applicable: number | null;
+    professional_tax: number | null;
+    tds_applicable: number | null;
+
+    bank_account: string | null;
+
+    salary_structure_status: number | null;
+}
+
+interface Department {
+    id: number;
+    DepartmentName: string;
+}
+interface Role {
+    id: number;
+    role_name: string;
+}
+interface TeamLead {
+    id: number;
+    fname: string;
+    lname: string;
+}
 
 export default function EditEmployee() {
     const params = useParams();
@@ -45,6 +78,25 @@ export default function EditEmployee() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [removePhoto, setRemovePhoto] = useState(false);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [teamLeads, setTeamLeads] = useState<TeamLead[]>([]);
+    const [salaryStructure, setSalaryStructure] = useState<SalaryStructureFormData>({
+        salary_type: null,
+        basic_salary: null,
+        hra: null,
+        da: null,
+        conveyance: null,
+        medical: null,
+        special_allowance: null,
+        gross_salary: null,
+        pf_applicable: null,
+        esi_applicable: null,
+        professional_tax: null,
+        tds_applicable: null,
+        bank_account: null,
+        salary_structure_status: 1,
+    });
 
     const [formData, setFormData] = useState<EmployeeFormData>({
         fname: '',
@@ -55,7 +107,6 @@ export default function EditEmployee() {
         dob: '',
         joining_date: '',
         gender: 'Male',
-        managerid: null,
         team_lead_id: null,
         senior_emp_id: null,
         department: '',
@@ -81,7 +132,6 @@ export default function EditEmployee() {
                 });
 
                 if (res.data.success) {
-                    //setFormData(res.data.data);
                     const employee = res.data.data;
                     setFormData({
                         ...employee,
@@ -91,6 +141,22 @@ export default function EditEmployee() {
                         joining_date: employee.joining_date
                             ? new Date(employee.joining_date).toISOString().split("T")[0]
                             : "",
+                    });
+                    setSalaryStructure({
+                        salary_type: employee.salary_type || 'Monthly',
+                        basic_salary: Number(employee.basic_salary ?? 0),
+                        hra: Number(employee.hra ?? 0),
+                        da: Number(employee.da ?? 0),
+                        conveyance: Number(employee.conveyance ?? 0),
+                        medical: Number(employee.medical ?? 0),
+                        special_allowance: Number(employee.special_allowance ?? 0),
+                        gross_salary: Number(employee.gross_salary ?? 0),
+                        pf_applicable: Number(employee.pf_applicable ?? 0),
+                        esi_applicable: Number(employee.esi_applicable ?? 0),
+                        professional_tax: Number(employee.professional_tax ?? 0),
+                        tds_applicable: Number(employee.tds_applicable ?? 0),
+                        bank_account: employee.bank_account || '',
+                        salary_structure_status: Number(employee.salary_structure_status ?? 1),
                     });
                 } else {
                     toast.error('Failed to load employee data');
@@ -110,12 +176,90 @@ export default function EditEmployee() {
         }
     }, [id, router]);
 
+
+    // Fetch Department List
+    const fetchDepartments = async () => {
+        try {
+            const res = await axios.get("/api/getDepartments");
+
+            if (res.data.success) {
+                setDepartments(res.data.data);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load departments");
+        }
+    };
+
+    // Load departments when page opens
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
+
+    // Fetch Role List
+    const fetchRoles = async () => {
+        try {
+            const res = await axios.get("/api/getRoles");
+
+            if (res.data.success) {
+                setRoles(res.data.data);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load roles");
+        }
+    };
+
+    // Load roles when page opens
+    useEffect(() => {
+        fetchRoles();
+    }, []);
+
+    // Fetch Team Leads List
+    const fetchTeamLeads = async () => {
+        try {
+            const res = await axios.get("/api/getTeamLeads");
+
+            if (res.data.success) {
+                setTeamLeads(res.data.data);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load team leads");
+        }
+    };
+
+    // Load team leads when page opens
+    useEffect(() => {
+        fetchTeamLeads();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         setFormData({
             ...formData,
             [name]: type === 'number' ? (value ? Number(value) : 0) : value,
         });
+    };
+
+    const handleSalaryChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        const { name, value, type } = e.target;
+
+        setSalaryStructure((prev) => ({
+            ...prev,
+            [name]: type === "number"
+                ? (value === "" ? null : Number(value))
+                : value,
+        }));
+    };
+    const handleSalaryCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, checked } = e.target;
+        setSalaryStructure((prev) => ({
+            ...prev,
+            [name]: checked ? 1 : 0,
+        }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,6 +317,12 @@ export default function EditEmployee() {
                     if (key !== 'emp_photo') {
                         submitData.append(key, value.toString());
                     }
+                }
+            });
+
+            Object.entries(salaryStructure).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                    submitData.append(key, value.toString());
                 }
             });
 
@@ -435,28 +585,43 @@ export default function EditEmployee() {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Department *
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
                                         name="department"
                                         value={formData.department}
                                         onChange={handleChange}
                                         required
                                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    >
+                                        <option value="">Select Department</option>
+
+                                        {departments.map((dept) => (
+                                            <option
+                                                key={dept.id}
+                                                value={dept.id}>
+                                                {dept.DepartmentName}
+                                            </option>
+                                        ))}
+                                    </select>
+
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Role *
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="role"
-                                        value={formData.role}
-                                        onChange={handleChange}
-                                        required
+                                    <select
+                                        name="role" value={formData.role} onChange={handleChange} required
                                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    >
+                                        <option value="">Select Role</option>
+                                        {roles.map((role) => (
+                                            <option
+                                                key={role.id}
+                                                value={role.id}>
+                                                {role.role_name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>
@@ -474,28 +639,20 @@ export default function EditEmployee() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Manager ID
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="managerid"
-                                        value={formData.managerid || ''}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Team Lead ID
                                     </label>
-                                    <input
-                                        type="text"
+                                    <select
                                         name="team_lead_id"
-                                        value={formData.team_lead_id || ''}
+                                        value={formData.team_lead_id ?? ""}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select Team Lead</option>
+                                        {teamLeads.map((lead) => (
+                                            <option key={lead.id} value={lead.id}>
+                                                {lead.fname} {lead.lname}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div>
@@ -634,6 +791,196 @@ export default function EditEmployee() {
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
+                                </div>
+                            </div>
+                        </div>
+                        {/* Salary Structure */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4">Salary Structure</h2>
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Salary Type
+                                        </label>
+                                        <select
+                                            name="salary_type"
+                                            value={salaryStructure.salary_type}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Daily">Daily</option>
+                                            <option value="Hourly">Hourly</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Basic Salary
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="basic_salary"
+                                            value={salaryStructure.basic_salary ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            HRA
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="hra"
+                                            value={salaryStructure.hra ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            DA
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="da"
+                                            value={salaryStructure.da ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Conveyance
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="conveyance"
+                                            value={salaryStructure.conveyance ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Medical
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="medical"
+                                            value={salaryStructure.medical ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Special Allowance
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="special_allowance"
+                                            value={salaryStructure.special_allowance ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Gross Salary
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="gross_salary"
+                                            value={salaryStructure.gross_salary ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Professional Tax
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="professional_tax"
+                                            value={salaryStructure.professional_tax ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Bank Account
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="bank_account"
+                                            value={salaryStructure.bank_account ?? ""}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Status
+                                        </label>
+                                        <select
+                                            name="salary_structure_status"
+                                            value={salaryStructure.salary_structure_status}
+                                            onChange={handleSalaryChange}
+                                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value={1}>Active</option>
+                                            <option value={0}>Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            name="pf_applicable"
+                                            checked={salaryStructure.pf_applicable === 1}
+                                            onChange={handleSalaryCheckboxChange}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        PF Applicable
+                                    </label>
+
+                                    <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            name="esi_applicable"
+                                            checked={salaryStructure.esi_applicable === 1}
+                                            onChange={handleSalaryCheckboxChange}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        ESI Applicable
+                                    </label>
+
+                                    <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            name="tds_applicable"
+                                            checked={salaryStructure.tds_applicable === 1}
+                                            onChange={handleSalaryCheckboxChange}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        TDS Applicable
+                                    </label>
                                 </div>
                             </div>
                         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, User, Briefcase, Users, Settings, LogOut } from "lucide-react";
+import { Home, User, Briefcase, Users, Settings, LogOut, FolderTree, KeyRound, CalendarCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type SidebarProps = {
@@ -25,9 +25,8 @@ export default function Sidebar({
 
   return (
     <div
-      className={`bg-blue-600 text-white ${
-        sidebarOpen ? "w-64" : "w-20"
-      } transition-all duration-300 flex flex-col`}
+      className={`bg-blue-600 text-white ${sidebarOpen ? "w-64" : "w-20"
+        } transition-all duration-300 flex flex-col`}
     >
 
       {/* Logo */}
@@ -45,6 +44,13 @@ export default function Sidebar({
           <Home />
           {sidebarOpen && "Dashboard"}
         </button>
+        <button
+          onClick={() => router.push("/attendance")}
+          className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"
+        >
+          <CalendarCheck />
+          {sidebarOpen && "Attendance"}
+        </button>
 
         <button
           onClick={() => router.push("/profile")}
@@ -61,6 +67,21 @@ export default function Sidebar({
           {sidebarOpen && "Employees"}
         </button>
         <button
+          onClick={() => router.push("/role")}
+          className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"
+        >
+          <KeyRound size={20} />
+          {sidebarOpen && "Role"}
+        </button>
+        <button
+          onClick={() => router.push("/departments")}
+          className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"
+        >
+          <FolderTree size={20} />
+          {sidebarOpen && "Departments"}
+        </button>
+
+        <button
           onClick={() => router.push("/settings")}
           className="flex items-center gap-3 w-full p-2 hover:bg-blue-500 rounded"
         >
@@ -73,7 +94,7 @@ export default function Sidebar({
       <div className="p-4 border-t border-blue-500">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full bg-red-500 hover:bg-red-600 p-2 rounded"
+          className="flex items-center gap-3 w-full bg-gray-500 hover:bg-gray-600 p-2 rounded"
         >
           <LogOut />
           {sidebarOpen && "Logout"}

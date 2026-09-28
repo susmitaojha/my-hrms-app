@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -16,7 +16,6 @@ interface EmployeeFormData {
   dob: string;
   joining_date: string;
   gender: string;
-  managerid: number | null;
   team_lead_id: number | null;
   senior_emp_id: number | null;
   department: string;
@@ -32,12 +31,28 @@ interface EmployeeFormData {
   salary_deduction: number;
   status: number;
 }
+interface Department {
+  id: number;
+  DepartmentName: string;
+}
+interface Role {
+  id: number;
+  role_name: string;
+}
+interface TeamLead {
+  id: number;
+  fname: string;
+  lname: string;
+}
 
 export default function AddEmployee() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [teamLeads, setTeamLeads] = useState<TeamLead[]>([]);
 
   const [formData, setFormData] = useState<EmployeeFormData>({
     fname: '',
@@ -48,7 +63,6 @@ export default function AddEmployee() {
     dob: '',
     joining_date: new Date().toISOString().split('T')[0],
     gender: 'Male',
-    managerid: null,
     team_lead_id: null,
     senior_emp_id: null,
     department: '',
@@ -64,6 +78,64 @@ export default function AddEmployee() {
     salary_deduction: 0,
     status: 1,
   });
+
+
+  // Fetch Department List
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get("/api/getDepartments");
+
+      if (res.data.success) {
+        setDepartments(res.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load departments");
+    }
+  };
+
+  // Load departments when page opens
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  // Fetch Role List
+  const fetchRoles = async () => {
+    try {
+      const res = await axios.get("/api/getRoles");
+
+      if (res.data.success) {
+        setRoles(res.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load roles");
+    }
+  };
+
+  // Load roles when page opens
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  // Fetch Team Leads List
+  const fetchTeamLeads = async () => {
+    try {
+      const res = await axios.get("/api/getTeamLeads");
+
+      if (res.data.success) {
+        setTeamLeads(res.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load team leads");
+    }
+  };
+
+  // Load team leads when page opens
+  useEffect(() => {
+    fetchTeamLeads();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -360,28 +432,50 @@ export default function AddEmployee() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Department *
                   </label>
-                  <input
-                    type="text"
+
+                  <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Department</option>
+
+                    {departments.map((dept) => (
+                      <option
+                        key={dept.id}
+                        value={dept.id}
+                      >
+                        {dept.DepartmentName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Role *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Role</option>
+
+                    {roles.map((role) => (
+                      <option
+                        key={role.id}
+                        value={role.id}
+                      >
+                        {role.role_name}
+                      </option>
+                    ))}
+                  </select>
+                
                 </div>
 
                 <div>
@@ -399,28 +493,20 @@ export default function AddEmployee() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Manager ID
+                    Team Lead
                   </label>
-                  <input
-                    type="number"
-                    name="managerid"
-                    value={formData.managerid || ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Team Lead ID
-                  </label>
-                  <input
-                    type="text"
+                  <select
                     name="team_lead_id"
-                    value={formData.team_lead_id || ''}
+                    value={formData.team_lead_id ?? ""}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select Team Lead</option>
+                    {teamLeads.map((lead) => (
+                      <option key={lead.id} value={lead.id}>
+                        {lead.fname} {lead.lname}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

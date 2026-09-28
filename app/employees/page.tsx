@@ -153,7 +153,7 @@ export default function EmployeeList() {
                 <div className="flex items-center gap-2">
                     <Link
                         href={`/employee/view/${row.id}`}
-                        className="p-2 bg-green-600 hover:bg-green-700 text-blue-600 rounded-md transition"
+                        className="p-2 bg-green-600 hover:bg-green-700 rounded-md text-white"
                         title="View"
                     >
                         <Eye size={18} />
@@ -161,7 +161,7 @@ export default function EmployeeList() {
 
                     <Link
                         href={`/employee/edit/${row.id}`}
-                        className="p-2 bg-yellow-500 hover:bg-yellow-600 text-blue-600 rounded-md transition"
+                        className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded-md text-white"
                         title="Edit"
                     >
                         <Pencil size={18} />
@@ -169,7 +169,7 @@ export default function EmployeeList() {
 
                     <button
                         onClick={() => deleteEmployee(row.id)}
-                        className="p-2 bg-red-600 hover:bg-red-700 text-red-400 rounded-md transition"
+                        className="p-2 bg-red-600 hover:bg-red-700 rounded-md text-white"
                         title="Delete"
                     >
                         <Trash2 size={18} />
