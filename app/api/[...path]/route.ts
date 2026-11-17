@@ -16,6 +16,8 @@ import { addDepartment } from "./add-departments-utility";
 import { updateDepartment } from "./update-departments-utility";
 import { deleteDepartment } from "./delete-departments-utility";
 import { getAttendances } from "./get-attendances-utility";
+import { getAttendanceStatus } from "./get-attendance-status-utility";
+import { postPunchInOut } from "./post-punch-in-out-utility";
 
 
 export async function GET(req: NextRequest, context: { params: Promise<{ path: string[] }> }) {
@@ -40,6 +42,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ path: s
   }
   if (joinedPath === "getAttendances") {
     return await getAttendances(req);
+  }
+  if (joinedPath === "getAttendanceStatus") {
+    return await getAttendanceStatus(req);
   }
 
   return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -87,6 +92,13 @@ export async function POST(
   }
   if (joinedPath === "deleteDepartment") {
     return await deleteDepartment(req);
+  }
+  if (joinedPath === "punchIn") {
+    return await postPunchInOut(req, "punchIn");
+  }
+
+  if (joinedPath === "punchOut") {
+    return await postPunchInOut(req, "punchOut");
   }
   return NextResponse.json({ status: 404, error: "Not found" });
 }

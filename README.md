@@ -2,6 +2,18 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Before starting the app, create a `.env.local` file in the project root and set
+`JWT_SECRET` to a unique random value. For example, generate one with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Copy the example format from `.env.example`, replace the placeholder with the
+generated value, and restart the development server. Keep the same secret for
+login, attendance requests, and all server instances; never commit it. Set
+`JWT_SECRET` in your deployment environment as well.
+
 First, run the development server:
 
 ```bash

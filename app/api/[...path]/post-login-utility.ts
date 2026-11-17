@@ -1,81 +1,176 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import pool from "../../../db";
 import { RowDataPacket } from "mysql2";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
-
 export const postLoginUser = async (req: NextRequest) => {
   let connection;
 
-  try { 
-    const { email, password } = await req.json();
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
 
-    if (!email || !password) {
+    if (!jwtSecret) {
+      console.error("JWT_SECRET is missing in environment variables.");
+
       return NextResponse.json(
-        { message: "Email and password required" },
+        {
+          message: "Server configuration error: JWT_SECRET is missing.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const { email, password, role } = await req.json();
+
+    // Validation
+    if (!email || !password || !role) {
+      return NextResponse.json(
+        {
+          message: "Email, password and role are required",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Only allow valid roles
+    if (!["admin", "employee"].includes(role)) {
+      return NextResponse.json(
+        {
+          message: "Invalid role",
+        },
         { status: 400 }
       );
     }
 
     connection = await pool.getConnection();
 
-    // 🔍 Find user
-    const [rows] = await connection.query<RowDataPacket[]>(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
-
-    if (rows.length === 0) {
-      return NextResponse.json(
-        { message: "User not found" },
-        { status: 401 }
+    let user: any = null;
+    if (role === "admin") {
+      const [rows] = await connection.query<RowDataPacket[]>(
+        `SELECT 
+          id,
+          name,
+          email,
+          role,
+          email_verified_at,
+          password
+         FROM users
+         WHERE email = ?
+         LIMIT 1`,
+        [email]
       );
+
+      if (rows.length === 0) {
+        return NextResponse.json(
+          {
+            message: "Admin account not found",
+          },
+          { status: 401 }
+        );
+      }
+
+      user = rows[0];
+    }
+    else if (role === "employee") {
+      const [rows] = await connection.query<RowDataPacket[]>(
+        `SELECT 
+          id,
+          emp_code,
+          fname,
+          mname,
+          lname,
+          email,
+          password
+         FROM employees
+         WHERE email = ?
+         AND is_deleted = 0
+         LIMIT 1`,
+        [email]
+      );
+
+      if (rows.length === 0) {
+        return NextResponse.json(
+          {
+            message: "Employee account not found",
+          },
+          { status: 401 }
+        );
+      }
+
+      user = rows[0];
     }
 
-    const user = rows[0];
-
-    // 🔐 Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isMatch) {
       return NextResponse.json(
-        { message: "Invalid password" },
+        {
+          message: "Invalid password",
+        },
         { status: 401 }
       );
     }
 
-    // 🎟️ Generate JWT
+    let userName = "";
+
+    if (role === "admin") {
+      userName = user.name;
+    } else {
+      userName = [
+        user.fname,
+        user.mname,
+        user.lname,
+      ]
+        .filter(Boolean)
+        .join(" ");
+    }
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
+        role: role,
       },
-      JWT_SECRET,
-      { expiresIn: "2m" }
+      jwtSecret,
+      {
+        expiresIn: "2h",
+      }
     );
 
     return NextResponse.json(
       {
         message: "Login successful",
         token,
+
         user: {
           id: user.id,
-          name: user.name,
+          name: userName,
           email: user.email,
+          role: role,
+
+          ...(role === "employee" && {
+            emp_code: user.emp_code,
+          }),
         },
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
 
     return NextResponse.json(
-      { message: "Server error" },
+      {
+        message: "Server error",
+      },
       { status: 500 }
     );
   } finally {
-    if (connection) connection.release();
+    if (connection) {
+      connection.release();
+    }
   }
 };

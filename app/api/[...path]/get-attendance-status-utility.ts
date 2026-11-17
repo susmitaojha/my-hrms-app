@@ -1,65 +1,141 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextRequest, NextResponse } from "next/server";
 import pool from "../../../db";
 import jwt from "jsonwebtoken";
-import { RowDataPacket } from "mysql2";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
 interface JwtPayload {
-    id: number;
-    email: string;
+    id?: number;
+    employee_id?: number;
 }
 
-export const getAttendanceStatus = async (req: NextRequest) => {
-    let connection;
-
+export const getAttendanceStatus = async (
+    req: NextRequest
+) => {
     try {
-        // ---------------------------------------
-        // 1. Get token
-        // ---------------------------------------
-        const authHeader = req.headers.get("authorization");
+        // -----------------------------------------
+        // 1. Check Authorization Header
+        // -----------------------------------------
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        const authHeader =
+            req.headers.get("authorization");
+
+        console.log(
+            "Authorization Header:",
+            authHeader ? "Present" : "Missing"
+        );
+
+        if (
+            !authHeader ||
+            !authHeader.startsWith("Bearer ")
+        ) {
             return NextResponse.json(
                 {
-                    message: "Unauthorized. Token required.",
+                    success: false,
+                    message:
+                        "Unauthorized. Bearer token is missing.",
                 },
                 { status: 401 }
             );
         }
 
-        const token = authHeader.split(" ")[1];
+        // -----------------------------------------
+        // 2. Get Token
+        // -----------------------------------------
 
-        // ---------------------------------------
-        // 2. Verify token
-        // ---------------------------------------
+        const token = authHeader.substring(7).trim();
+
+        if (!token) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Token is empty.",
+                },
+                { status: 401 }
+            );
+        }
+
+        // -----------------------------------------
+        // 3. Check JWT Secret
+        // -----------------------------------------
+
+        const jwtSecret = process.env.JWT_SECRET;
+
+        if (!jwtSecret) {
+            console.error(
+                "JWT_SECRET is missing in environment variables."
+            );
+
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Server configuration error: JWT_SECRET is missing.",
+                },
+                { status: 500 }
+            );
+        }
+
+        // -----------------------------------------
+        // 4. Verify JWT
+        // -----------------------------------------
+
         let decoded: JwtPayload;
 
         try {
             decoded = jwt.verify(
                 token,
-                JWT_SECRET
+                jwtSecret
             ) as JwtPayload;
-        } catch (error) {
+        } catch (jwtError) {
+            console.error(
+                "JWT Verification Error:",
+                jwtError
+            );
+
             return NextResponse.json(
                 {
-                    message: "Invalid or expired token.",
+                    success: false,
+                    message:
+                        "Invalid or expired token.",
                 },
                 { status: 401 }
             );
         }
 
-        const employeeId = decoded.id;
+        console.log(
+            "Decoded JWT:",
+            decoded
+        );
 
-        // ---------------------------------------
-        // 3. DB connection
-        // ---------------------------------------
-        connection = await pool.getConnection();
+        // -----------------------------------------
+        // 5. Get Employee ID
+        // -----------------------------------------
 
-        // ---------------------------------------
-        // 4. Get today's attendance
-        // ---------------------------------------
-        const [rows] = await connection.query<RowDataPacket[]>(
+        const employeeId =
+            decoded.id ?? decoded.employee_id;
+
+        if (!employeeId) {
+            console.error(
+                "Employee ID not found in JWT:",
+                decoded
+            );
+
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Employee ID is missing from token.",
+                },
+                { status: 401 }
+            );
+        }
+
+        // -----------------------------------------
+        // 6. Get Today's Attendance
+        // -----------------------------------------
+
+        const [rows]: any = await pool.query(
             `
             SELECT
                 id,
@@ -70,51 +146,73 @@ export const getAttendanceStatus = async (req: NextRequest) => {
                 status
             FROM attendances
             WHERE employee_id = ?
-              AND date = CURDATE()
+            AND DATE(date) = CURDATE()
             LIMIT 1
             `,
             [employeeId]
         );
 
-        // ---------------------------------------
-        // 5. No attendance
-        // ---------------------------------------
-        if (rows.length === 0) {
-            return NextResponse.json(
-                {
-                    attendance: null,
-                    checkedIn: false,
-                    checkedOut: false,
-                },
-                { status: 200 }
-            );
-        }
-
-        const attendance = rows[0];
-
-        // ---------------------------------------
-        // 6. Attendance exists
-        // ---------------------------------------
-        return NextResponse.json(
-            {
-                attendance,
-                checkedIn: true,
-                checkedOut: attendance.exit_time !== null,
-            },
-            { status: 200 }
+        console.log(
+            "Attendance rows:",
+            rows
         );
-    } catch (error) {
-        console.error("Get attendance status error:", error);
+
+        // -----------------------------------------
+        // 7. Return Attendance
+        // -----------------------------------------
+
+        return NextResponse.json({
+            success: true,
+            attendance:
+                rows.length > 0
+                    ? rows[0]
+                    : null,
+        });
+
+    } catch (error: any) {
+
+        console.error(
+            "Today's attendance error:"
+        );
+
+        console.error(
+            "Message:",
+            error?.message
+        );
+
+        console.error(
+            "Code:",
+            error?.code
+        );
+
+        console.error(
+            "SQL Message:",
+            error?.sqlMessage
+        );
+
+        console.error(
+            "Stack:",
+            error?.stack
+        );
+
+        console.error(
+            "================================="
+        );
 
         return NextResponse.json(
             {
-                message: "Server error",
+                success: false,
+
+                // Development debugging
+                message:
+                    process.env.NODE_ENV ===
+                    "development"
+                        ? error?.sqlMessage ||
+                          error?.message ||
+                          "Failed to get attendance"
+                        : "Failed to get attendance",
             },
             { status: 500 }
         );
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 };

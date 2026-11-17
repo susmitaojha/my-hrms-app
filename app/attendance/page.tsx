@@ -15,7 +15,7 @@ interface Attendance {
     fname: string;
     mname: string | null;
     lname: string | null;
-    email: string;
+    //email: string;
 
     date: string;
     entry_time: string | null;
@@ -98,7 +98,7 @@ export default function AttendanceList() {
             return (
                 item.emp_code?.toLowerCase().includes(search) ||
                 employeeName.toLowerCase().includes(search) ||
-                item.email?.toLowerCase().includes(search) ||
+                // item.email?.toLowerCase().includes(search) ||
                 item.status?.toLowerCase().includes(search) ||
                 item.date?.toLowerCase().includes(search) ||
                 item.entry_time?.toLowerCase().includes(search) ||
@@ -133,13 +133,13 @@ export default function AttendanceList() {
             minWidth: "150px",
         },
 
-        {
-            name: "Email",
-            selector: (row) => row.email || "-",
-            sortable: true,
-            grow: 2,
-            minWidth: "180px",
-        },
+        // {
+        //     name: "Email",
+        //     selector: (row) => row.email || "-",
+        //     sortable: true,
+        //     grow: 2,
+        //     minWidth: "180px",
+        // },
 
         {
             name: "Date",
@@ -252,7 +252,7 @@ export default function AttendanceList() {
         ID: item.id,
         "Employee Code": item.emp_code || "-",
         "Employee Name": getEmployeeName(item),
-        Email: item.email || "-",
+        // "Email": item.email || "-",
         Date: formatDate(item.date),
         "Entry Time": item.entry_time || "-",
         "Exit Time": item.exit_time || "-",

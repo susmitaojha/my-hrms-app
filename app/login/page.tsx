@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -71,7 +71,7 @@ export default function Page() {
       if (formData.role === "admin") {
         router.push("/dashboard");
       } else if (formData.role === "employee") {
-        router.push("/employee/dashboard");
+        router.push("/employee_dashboard");
       }
 
     } catch (error: any) {
